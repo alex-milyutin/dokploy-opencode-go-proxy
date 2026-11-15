@@ -13,10 +13,9 @@ services:
       SESSION_MODE: prefix
       USER_AGENT: dokploy-ai/1.0
       LISTEN_ADDR: ":8080"
-    ports:
-      # the Dokploy panel runs in a container, so 127.0.0.1 cannot be used as the endpoint.
-      # Publish on the node's interfaces and rely on PROXY_TOKEN for authentication.
-      - "8080:8080"
+    # No published port on purpose: the Dokploy panel reaches this service over
+    # dokploy-network as http://opencode-go-proxy:8080/v1. Publishing 8080 would
+    # expose the proxy to the internet through the node's hostname.
     networks:
       - dokploy-network
     healthcheck:

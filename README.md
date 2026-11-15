@@ -98,8 +98,8 @@ The proxy runs inside Dokploy itself. Two options.
 `docker-compose.yml` and `Dockerfile` into the editor). Dokploy builds the image from
 `build: .`, runs it, and attaches it to the `dokploy-network` network the panel itself
 lives on (the installer runs `docker network create --driver overlay --attachable
-dokploy-network` and starts the panel with `--network dokploy-network`). The published
-port `8080:8080` is already in the compose file.
+dokploy-network` and starts the panel with `--network dokploy-network`). No port is
+published: the panel reaches the service over that network.
 
 `OPENCODE_API_KEY` and `PROXY_TOKEN` go into the service's `Environment` (Dokploy stores
 them encrypted). `docker-compose.yml` uses `${VAR:?set VAR}`, so a missing variable fails
@@ -115,15 +115,21 @@ the Dockerfile.
 
 Check in this order, cleanest first:
 
-1. `http://opencode-go-proxy:8080/v1` — if the container is on `dokploy-network` under
-   that name (compose service name / `container_name`). The panel resolves it through
-   Docker DNS.
-2. `http://<node private IP>:8080/v1` — the published port. Always works. Private
-   addresses are not blocked by self-hosted Dokploy: the private-network list in
+1. `http://opencode-go-proxy:8080/v1` — the compose service name on `dokploy-network`.
+   The panel resolves it through Docker DNS. This is what the shipped compose file is
+   set up for: it publishes no port at all.
+2. `http://<node private IP>:8080/v1` — only if the DNS name does not resolve. Re-add a
+   `ports: ["8080:8080"]` block to the compose file, or bind it to a private interface.
+   Private addresses are not blocked by self-hosted Dokploy: the private-network list in
    `provider-fetch.ts` only applies under `IS_CLOUD` (cloud metadata addresses are always
-   blocked), so there is no need to expose anything publicly.
-3. `https://ai-proxy.<domain>/v1` through Traefik — only if external access is required.
-   Then `PROXY_TOKEN` is mandatory and port 8080 should be firewalled off.
+   blocked).
+3. `https://ai-proxy.<domain>/v1` through Traefik — only if you need access from outside
+   the host. Then `PROXY_TOKEN` is mandatory.
+
+⚠️ Publishing `8080:8080` is not private by itself: the port answers on the node's
+hostname, and Cloudflare proxies port 8080, so the proxy becomes reachable from the
+internet even without a dedicated domain. It stays token-protected, but prefer the
+service name or a firewall.
 
 Warning: `http://127.0.0.1:8080/v1` will not work — the panel runs in a container, so
 127.0.0.1 is the panel itself.
