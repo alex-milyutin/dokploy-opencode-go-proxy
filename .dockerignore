@@ -1,0 +1,10 @@
+*.md
+.git
+.gitignore
+test
+scripts
+
+.idea
+*.bak
+*.bak.*
+DS_Store

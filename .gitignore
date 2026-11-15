@@ -1,0 +1,10 @@
+ocproxy
+ocproxy-*
+*.log
+.env
+test/mock_log.jsonl
+
+.idea
+*.bak
+*.bak.*
+DS_Store

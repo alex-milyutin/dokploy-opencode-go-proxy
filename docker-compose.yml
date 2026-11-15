@@ -1,0 +1,31 @@
+services:
+  opencode-go-proxy:
+    build: .
+    # alternatively use a prebuilt image: image: ghcr.io/<you>/dokploy-opencode-go-proxy:latest
+    container_name: opencode-go-proxy
+    restart: unless-stopped
+    environment:
+      # the real OpenCode Go key stays here; Dokploy's UI gets PROXY_TOKEN instead
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY:?set OPENCODE_API_KEY}
+      # the value typed into Dokploy -> Settings -> AI -> API Key
+      PROXY_TOKEN: ${PROXY_TOKEN:?set PROXY_TOKEN}
+      UPSTREAM_BASE: https://opencode.ai/inference/go/openai/v1
+      SESSION_MODE: prefix
+      USER_AGENT: dokploy-ai/1.0
+      LISTEN_ADDR: ":8080"
+    ports:
+      # the Dokploy panel runs in a container, so 127.0.0.1 cannot be used as the endpoint.
+      # Publish on the node's interfaces and rely on PROXY_TOKEN for authentication.
+      - "8080:8080"
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  # created by the Dokploy installer (docker network create --driver overlay --attachable dokploy-network)
+  dokploy-network:
+    external: true
